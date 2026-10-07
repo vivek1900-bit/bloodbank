@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BloodConnect – Blood Banking System</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="nav-brand">🩸 BloodConnect</div>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="login.html">Login</a>
+      <a href="signup.html">Sign Up</a>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Donate Blood,<br/>Save Lives</h1>
+      <p>BloodConnect bridges the gap between blood donors, hospitals, and blood banks — ensuring timely access to safe blood when it matters most.</p>
+      <div class="hero-btns">
+        <a href="signup.html" class="btn btn-primary">Register as Donor</a>
+        <a href="login.html" class="btn btn-outline">Login</a>
+      </div>
+    </div>
+    <div class="hero-img">
+      <div class="blood-drop-anim">🩸</div>
+    </div>
+  </section>
+
+  <!-- ===== STATS ===== -->
+  <section class="stats-section">
+    <div class="stat-card">
+      <h2 id="donorCount">0</h2>
+      <p>Registered Donors</p>
+    </div>
+    <div class="stat-card">
+      <h2 id="requestCount">0</h2>
+      <p>Blood Requests</p>
+    </div>
+    <div class="stat-card">
+      <h2>8</h2>
+      <p>Blood Types Covered</p>
+    </div>
+    <div class="stat-card">
+      <h2>24/7</h2>
+      <p>Emergency Support</p>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="how-section">
+    <h2 class="section-title">How It Works</h2>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-icon">📝</div>
+        <h3>1. Sign Up</h3>
+        <p>Create your account as a donor or hospital staff. Fill in basic details and blood group.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">🩸</div>
+        <h3>2. Donate</h3>
+        <p>Register your blood donation. The system updates inventory in real time.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">🏥</div>
+        <h3>3. Request</h3>
+        <p>Hospitals raise blood requests during emergencies. Admins manage fulfillment.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">✅</div>
+        <h3>4. Fulfil</h3>
+        <p>Admin approves requests, deducts inventory, and notifies the requester.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BLOOD TYPES ===== -->
+  <section class="blood-types-section">
+    <h2 class="section-title">Blood Types We Manage</h2>
+    <div class="blood-types-grid">
+      <div class="blood-badge">A+</div>
+      <div class="blood-badge">A-</div>
+      <div class="blood-badge">B+</div>
+      <div class="blood-badge">B-</div>
+      <div class="blood-badge">AB+</div>
+      <div class="blood-badge">AB-</div>
+      <div class="blood-badge">O+</div>
+      <div class="blood-badge">O-</div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <p>🩸 BloodConnect &copy; 2026 | SDC Project | Blood Banking System</p>
+  </footer>
+
+  <script>
+    // Animate stats from localStorage
+    const donors = JSON.parse(localStorage.getItem('bb_users') || '[]').filter(u => u.role === 'user');
+    const requests = JSON.parse(localStorage.getItem('bb_requests') || '[]');
+
+    function animateCount(el, target) {
+      let current = 0;
+      const step = Math.ceil(target / 40);
+      const timer = setInterval(() => {
+        current += step;
+        if (current >= target) { current = target; clearInterval(timer); }
+        el.textContent = current;
+      }, 40);
+    }
+
+    animateCount(document.getElementById('donorCount'), donors.length || 0);
+    animateCount(document.getElementById('requestCount'), requests.length || 0);
+  </script>
+</body>
+</html>
