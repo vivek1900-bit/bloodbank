@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard – BloodConnect</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body class="dashboard-page">
+
+  <!-- NAVBAR -->
+  <nav class="dashboard-nav">
+    <div class="nav-brand">🩸 BloodConnect <span class="admin-badge">ADMIN</span></div>
+    <div class="nav-links">
+      <span>👤 Admin Panel</span>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </nav>
+
+  <!-- DASHBOARD LAYOUT -->
+  <div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <ul class="sidebar-menu">
+        <li><a href="#" class="menu-item active" data-section="overviewSection">📊 Overview</a></li>
+        <li><a href="#" class="menu-item" data-section="inventoryMgmtSection">📦 Manage Inventory</a></li>
+        <li><a href="#" class="menu-item" data-section="requestsMgmtSection">🩸 Blood Requests</a></li>
+        <li><a href="#" class="menu-item" data-section="donationsMgmtSection">💉 Donations</a></li>
+        <li><a href="#" class="menu-item" data-section="donorsMgmtSection">👥 All Donors</a></li>
+      </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <!-- OVERVIEW SECTION -->
+      <section id="overviewSection" class="dash-section active-section">
+        <h2 class="page-title">📊 Dashboard Overview</h2>
+        <div class="overview-stats" id="overviewStats"></div>
+        <h3 style="margin-top:30px; margin-bottom:15px;">Quick Blood Inventory</h3>
+        <div class="inventory-grid" id="overviewInventory"></div>
+      </section>
+
+      <!-- INVENTORY MANAGEMENT SECTION -->
+      <section id="inventoryMgmtSection" class="dash-section">
+        <h2 class="page-title">📦 Manage Blood Inventory</h2>
+        <p class="sub-text">Add or remove blood units from inventory.</p>
+        <div id="invMsg" class="msg-box" style="display:none;"></div>
+        <div class="inventory-manage-grid" id="inventoryManageGrid"></div>
+      </section>
+
+      <!-- BLOOD REQUESTS SECTION -->
+      <section id="requestsMgmtSection" class="dash-section">
+        <h2 class="page-title">🩸 Blood Requests</h2>
+        <p class="sub-text">Review and manage all blood requests from users.</p>
+        <div id="requestsTable" class="table-wrapper"></div>
+      </section>
+
+      <!-- DONATIONS SECTION -->
+      <section id="donationsMgmtSection" class="dash-section">
+        <h2 class="page-title">💉 Pending Donations</h2>
+        <p class="sub-text">Approve or reject registered blood donations. Approved donations update inventory.</p>
+        <div id="donationsTable" class="table-wrapper"></div>
+      </section>
+
+      <!-- DONORS SECTION -->
+      <section id="donorsMgmtSection" class="dash-section">
+        <h2 class="page-title">👥 All Registered Donors</h2>
+        <div class="search-bar" style="margin-bottom:20px;">
+          <input type="text" id="adminSearch" placeholder="Search by name, email, or blood group..." oninput="filterDonors()" />
+        </div>
+        <div id="donorsTable" class="table-wrapper"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // ===== AUTH GUARD =====
+    let adminUser = JSON.parse(localStorage.getItem('bb_loggedIn') || 'null');
+    if (!adminUser || adminUser.role !== 'admin') {
+      window.location.href = 'login.html';
+    }
+
+    // ===== SIDEBAR NAVIGATION =====
+    document.querySelectorAll('.menu-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.dash-section').forEach(s => s.classList.remove('active-section'));
+        this.classList.add('active');
+        const sec = this.dataset.section;
+        document.getElementById(sec).classList.add('active-section');
+        if (sec === 'overviewSection') loadOverview();
+        if (sec === 'inventoryMgmtSection') loadInventoryManage();
+        if (sec === 'requestsMgmtSection') loadRequests();
+        if (sec === 'donationsMgmtSection') loadDonations();
+        if (sec === 'donorsMgmtSection') loadDonors();
+      });
+    });
+
+    // ===== OVERVIEW =====
+    function loadOverview() {
+      const users    = JSON.parse(localStorage.getItem('bb_users') || '[]').filter(u => u.role === 'user');
+      const requests = JSON.parse(localStorage.getItem('bb_requests') || '[]');
+      const donations= JSON.parse(localStorage.getItem('bb_donations') || '[]');
+      const inv      = JSON.parse(localStorage.getItem('bb_inventory') || '{}');
+      const pending  = requests.filter(r => r.status === 'Pending').length;
+      const totalUnits = Object.values(inv).reduce((a, b) => a + b, 0);
+
+      document.getElementById('overviewStats').innerHTML = `
+        <div class="stat-card"><h2>${users.length}</h2><p>Total Donors</p></div>
+        <div class="stat-card"><h2>${requests.length}</h2><p>Total Requests</p></div>
+        <div class="stat-card"><h2>${pending}</h2><p>Pending Requests</p></div>
+        <div class="stat-card"><h2>${totalUnits}</h2><p>Total Blood Units</p></div>
+        <div class="stat-card"><h2>${donations.length}</h2><p>Donations Registered</p></div>`;
+
+      const grid = document.getElementById('overviewInventory');
+      grid.innerHTML = '';
+      Object.entries(inv).forEach(([type, units]) => {
+        const level = units > 8 ? 'high' : units > 4 ? 'medium' : 'low';
+        grid.innerHTML += `
+          <div class="inv-card ${level}">
+            <div class="inv-blood-type">${type}</div>
+            <div class="inv-units">${units}</div>
+            <div class="inv-label">units</div>
+            <div class="inv-status">${level === 'high' ? '🟢' : level === 'medium' ? '🟡' : '🔴'}</div>
+          </div>`;
+      });
+    }
+    loadOverview();
+
+    // ===== INVENTORY MANAGE =====
+    function loadInventoryManage() {
+      const inv = JSON.parse(localStorage.getItem('bb_inventory') || '{}');
+      const grid = document.getElementById('inventoryManageGrid');
+      grid.innerHTML = '';
+      Object.entries(inv).forEach(([type, units]) => {
+        grid.innerHTML += `
+          <div class="inv-manage-card">
+            <div class="inv-blood-type">${type}</div>
+            <div class="inv-units" id="inv_${type}">${units}</div>
+            <div class="inv-label">units available</div>
+            <div class="inv-controls">
+              <button class="btn btn-sm btn-danger" onclick="updateInv('${type}', -1)">−</button>
+              <input type="number" id="invInput_${type}" placeholder="qty" min="1" class="inv-input"/>
+              <button class="btn btn-sm btn-primary" onclick="addInvCustom('${type}')">+ Add</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    function updateInv(type, delta) {
+      let inv = JSON.parse(localStorage.getItem('bb_inventory') || '{}');
+      inv[type] = Math.max(0, (inv[type] || 0) + delta);
+      localStorage.setItem('bb_inventory', JSON.stringify(inv));
+      document.getElementById('inv_' + type).textContent = inv[type];
+      showInvMsg('✅ Inventory updated for ' + type, 'success');
+    }
+
+    function addInvCustom(type) {
+      const input = document.getElementById('invInput_' + type);
+      const qty = parseInt(input.value);
+      if (!qty || qty < 1) { showInvMsg('❌ Enter a valid quantity.', 'error'); return; }
+      let inv = JSON.parse(localStorage.getItem('bb_inventory') || '{}');
+      inv[type] = (inv[type] || 0) + qty;
+      localStorage.setItem('bb_inventory', JSON.stringify(inv));
+      document.getElementById('inv_' + type).textContent = inv[type];
+      input.value = '';
+      showInvMsg('✅ Added ' + qty + ' units of ' + type, 'success');
+    }
+
+    function showInvMsg(text, type) {
+      const msg = document.getElementById('invMsg');
+      msg.style.display = 'block';
+      msg.className = 'msg-box ' + type;
+      msg.textContent = text;
+      setTimeout(() => msg.style.display = 'none', 2500);
+    }
+
+    // ===== REQUESTS MANAGEMENT =====
+    function loadRequests() {
+      const requests = JSON.parse(localStorage.getItem('bb_requests') || '[]');
+      const container = document.getElementById('requestsTable');
+      if (requests.length === 0) {
+        container.innerHTML = '<p class="no-data">No blood requests yet.</p>';
+        return;
+      }
+      let html = `<table class="data-table"><thead><tr>
+        <th>Date</th><th>Donor</th><th>Patient</th><th>Blood</th><th>Units</th><th>Hospital</th><th>Status</th><th>Action</th>
+      </tr></thead><tbody>`;
+      requests.forEach((r, i) => {
+        const cls = r.status === 'Approved' ? 'status-approved' : r.status === 'Rejected' ? 'status-rejected' : 'status-pending';
+        const btns = r.status === 'Pending'
+          ? `<button class="btn btn-sm btn-primary" onclick="handleRequest(${i}, 'Approved')">✅ Approve</button>
+             <button class="btn btn-sm btn-danger" onclick="handleRequest(${i}, 'Rejected')">❌ Reject</button>`
+          : `<span class="${cls}">${r.status}</span>`;
+        html += `<tr>
+          <td>${r.date}</td><td>${r.userName}</td><td>${r.patient}</td>
+          <td><span class="blood-tag">${r.blood}</span></td>
+          <td>${r.units}</td><td>${r.hospital}</td>
+          <td><span class="${cls}">${r.status}</span></td>
+          <td>${btns}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function handleRequest(index, status) {
+      let requests = JSON.parse(localStorage.getItem('bb_requests') || '[]');
+      const req = requests[index];
+      if (status === 'Approved') {
+        let inv = JSON.parse(localStorage.getItem('bb_inventory') || '{}');
+        if ((inv[req.blood] || 0) < req.units) {
+          alert('❌ Not enough inventory to approve this request!');
+          return;
+        }
+        inv[req.blood] -= req.units;
+        localStorage.setItem('bb_inventory', JSON.stringify(inv));
+      }
+      requests[index].status = status;
+      localStorage.setItem('bb_requests', JSON.stringify(requests));
+      loadRequests();
+    }
+
+    // ===== DONATIONS MANAGEMENT =====
+    function loadDonations() {
+      const donations = JSON.parse(localStorage.getItem('bb_donations') || '[]');
+      const container = document.getElementById('donationsTable');
+      if (donations.length === 0) {
+        container.innerHTML = '<p class="no-data">No donations registered yet.</p>';
+        return;
+      }
+      let html = `<table class="data-table"><thead><tr>
+        <th>Donor</th><th>Blood</th><th>Units</th><th>Date</th><th>Center</th><th>Status</th><th>Action</th>
+      </tr></thead><tbody>`;
+      donations.forEach((d, i) => {
+        const cls = d.status === 'Approved' ? 'status-approved' : d.status === 'Rejected' ? 'status-rejected' : 'status-pending';
+        const btns = d.status === 'Pending'
+          ? `<button class="btn btn-sm btn-primary" onclick="handleDonation(${i}, 'Approved')">✅ Approve</button>
+             <button class="btn btn-sm btn-danger" onclick="handleDonation(${i}, 'Rejected')">❌ Reject</button>`
+          : `<span class="${cls}">${d.status}</span>`;
+        html += `<tr>
+          <td>${d.donorName}</td>
+          <td><span class="blood-tag">${d.blood}</span></td>
+          <td>${d.units}</td><td>${d.date}</td><td>${d.center}</td>
+          <td><span class="${cls}">${d.status}</span></td>
+          <td>${btns}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function handleDonation(index, status) {
+      let donations = JSON.parse(localStorage.getItem('bb_donations') || '[]');
+      const don = donations[index];
+      if (status === 'Approved') {
+        let inv = JSON.parse(localStorage.getItem('bb_inventory') || '{}');
+        inv[don.blood] = (inv[don.blood] || 0) + don.units;
+        localStorage.setItem('bb_inventory', JSON.stringify(inv));
+
+        // Update donor history status
+        let users = JSON.parse(localStorage.getItem('bb_users') || '[]');
+        const idx = users.findIndex(u => u.id === don.donorId);
+        if (idx !== -1) {
+          const dIdx = (users[idx].donationHistory || []).findIndex(d => d.date === don.date && d.center === don.center);
+          if (dIdx !== -1) users[idx].donationHistory[dIdx].status = 'Approved';
+          localStorage.setItem('bb_users', JSON.stringify(users));
+        }
+      }
+      donations[index].status = status;
+      localStorage.setItem('bb_donations', JSON.stringify(donations));
+      loadDonations();
+    }
+
+    // ===== DONORS MANAGEMENT =====
+    let allDonors = [];
+    function loadDonors() {
+      allDonors = JSON.parse(localStorage.getItem('bb_users') || '[]').filter(u => u.role === 'user');
+      renderDonors(allDonors);
+    }
+
+    function renderDonors(list) {
+      const container = document.getElementById('donorsTable');
+      if (list.length === 0) {
+        container.innerHTML = '<p class="no-data">No donors registered yet.</p>';
+        return;
+      }
+      let html = `<table class="data-table"><thead><tr>
+        <th>Name</th><th>Email</th><th>Phone</th><th>Blood</th><th>Age</th><th>City</th><th>Donations</th><th>Action</th>
+      </tr></thead><tbody>`;
+      list.forEach(u => {
+        html += `<tr>
+          <td>${u.name}</td><td>${u.email}</td><td>${u.phone}</td>
+          <td><span class="blood-tag">${u.blood}</span></td>
+          <td>${u.age}</td><td>${u.city}</td>
+          <td>${(u.donationHistory || []).length}</td>
+          <td><button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')">🗑 Remove</button></td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function filterDonors() {
+      const q = document.getElementById('adminSearch').value.toLowerCase();
+      const filtered = allDonors.filter(u =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.blood.toLowerCase().includes(q)
+      );
+      renderDonors(filtered);
+    }
+
+    function deleteUser(uid) {
+      if (!confirm('Are you sure you want to remove this donor?')) return;
+      let users = JSON.parse(localStorage.getItem('bb_users') || '[]');
+      users = users.filter(u => u.id !== uid);
+      localStorage.setItem('bb_users', JSON.stringify(users));
+      loadDonors();
+    }
+
+    // ===== LOGOUT =====
+    function logout() {
+      localStorage.removeItem('bb_loggedIn');
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Dashboard – BloodConnect</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body class="dashboard-page">
+
+  <!-- NAVBAR -->
+  <nav class="dashboard-nav">
+    <div class="nav-brand">🩸 BloodConnect</div>
+    <div class="nav-links">
+      <span id="welcomeUser"></span>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR + MAIN LAYOUT -->
+  <div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <ul class="sidebar-menu">
+        <li><a href="#" class="menu-item active" data-section="profileSection">👤 My Profile</a></li>
+        <li><a href="#" class="menu-item" data-section="inventorySection">📦 Blood Inventory</a></li>
+        <li><a href="#" class="menu-item" data-section="requestSection">🩸 Request Blood</a></li>
+        <li><a href="#" class="menu-item" data-section="donateSection">💉 Donate Blood</a></li>
+        <li><a href="#" class="menu-item" data-section="historySection">📋 My History</a></li>
+        <li><a href="#" class="menu-item" data-section="searchSection">🔍 Find Donors</a></li>
+      </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <!-- PROFILE SECTION -->
+      <section id="profileSection" class="dash-section active-section">
+        <h2 class="page-title">👤 My Profile</h2>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profileAvatar">👤</div>
+          <div class="profile-info" id="profileInfo"></div>
+        </div>
+        <div class="profile-stats" id="profileStats"></div>
+      </section>
+
+      <!-- INVENTORY SECTION -->
+      <section id="inventorySection" class="dash-section">
+        <h2 class="page-title">📦 Blood Inventory</h2>
+        <p class="sub-text">Current blood unit availability across all blood types.</p>
+        <div class="inventory-grid" id="inventoryGrid"></div>
+      </section>
+
+      <!-- REQUEST SECTION -->
+      <section id="requestSection" class="dash-section">
+        <h2 class="page-title">🩸 Request Blood</h2>
+        <p class="sub-text">Submit a blood request for a patient or hospital.</p>
+        <div id="reqMsg" class="msg-box" style="display:none;"></div>
+        <form id="requestForm" class="dash-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Patient Name</label>
+              <input type="text" id="patientName" placeholder="Patient full name" required/>
+            </div>
+            <div class="form-group">
+              <label>Blood Group Required</label>
+              <select id="reqBlood" required>
+                <option value="">-- Select --</option>
+                <option>A+</option><option>A-</option>
+                <option>B+</option><option>B-</option>
+                <option>AB+</option><option>AB-</option>
+                <option>O+</option><option>O-</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Units Required</label>
+              <input type="number" id="reqUnits" min="1" max="10" placeholder="Number of units" required/>
+            </div>
+            <div class="form-group">
+              <label>Hospital Name</label>
+              <input type="text" id="reqHospital" placeholder="Hospital name" required/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Reason / Emergency Note</label>
+            <textarea id="reqReason" rows="3" placeholder="Describe the urgency..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit Request</button>
+        </form>
+
+        <h3 style="margin-top:30px;">My Previous Requests</h3>
+        <div id="myRequests" class="table-wrapper"></div>
+      </section>
+
+      <!-- DONATE SECTION -->
+      <section id="donateSection" class="dash-section">
+        <h2 class="page-title">💉 Register Blood Donation</h2>
+        <p class="sub-text">Record your blood donation. A donation adds units to inventory pending admin approval.</p>
+        <div id="donateMsg" class="msg-box" style="display:none;"></div>
+        <form id="donateForm" class="dash-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Donation Date</label>
+              <input type="date" id="donateDate" required/>
+            </div>
+            <div class="form-group">
+              <label>Blood Group</label>
+              <input type="text" id="donateBlood" readonly/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Units to Donate</label>
+              <input type="number" id="donateUnits" min="1" max="2" value="1" required/>
+            </div>
+            <div class="form-group">
+              <label>Donation Center</label>
+              <input type="text" id="donateCenter" placeholder="Blood bank / hospital name" required/>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Register Donation</button>
+        </form>
+      </section>
+
+      <!-- HISTORY SECTION -->
+      <section id="historySection" class="dash-section">
+        <h2 class="page-title">📋 My Donation History</h2>
+        <div id="historyTable" class="table-wrapper"></div>
+      </section>
+
+      <!-- SEARCH SECTION -->
+      <section id="searchSection" class="dash-section">
+        <h2 class="page-title">🔍 Find Donors</h2>
+        <p class="sub-text">Search for registered donors by blood group and city.</p>
+        <div class="search-bar">
+          <select id="searchBlood">
+            <option value="">All Blood Groups</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+          <input type="text" id="searchCity" placeholder="City name (optional)"/>
+          <button class="btn btn-primary" onclick="searchDonors()">Search</button>
+        </div>
+        <div id="donorResults" class="table-wrapper" style="margin-top:20px;"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // ===== AUTH GUARD =====
+    let currentUser = JSON.parse(localStorage.getItem('bb_loggedIn') || 'null');
+    if (!currentUser || currentUser.role !== 'user') {
+      window.location.href = 'login.html';
+    }
+
+    // ===== WELCOME =====
+    document.getElementById('welcomeUser').textContent = '👋 ' + currentUser.name;
+
+    // ===== SIDEBAR NAVIGATION =====
+    document.querySelectorAll('.menu-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.dash-section').forEach(s => s.classList.remove('active-section'));
+        this.classList.add('active');
+        document.getElementById(this.dataset.section).classList.add('active-section');
+        if (this.dataset.section === 'historySection') loadHistory();
+        if (this.dataset.section === 'inventorySection') loadInventory();
+        if (this.dataset.section === 'requestSection') loadMyRequests();
+        if (this.dataset.section === 'profileSection') loadProfile();
+      });
+    });
+
+    // ===== PROFILE =====
+    function loadProfile() {
+      const u = currentUser;
+      document.getElementById('profileAvatar').textContent = u.name.charAt(0).toUpperCase();
+      document.getElementById('profileInfo').innerHTML = `
+        <table class="info-table">
+          <tr><td><strong>Name:</strong></td><td>${u.name}</td></tr>
+          <tr><td><strong>Email:</strong></td><td>${u.email}</td></tr>
+          <tr><td><strong>Phone:</strong></td><td>${u.phone}</td></tr>
+          <tr><td><strong>Blood Group:</strong></td><td><span class="blood-tag">${u.blood}</span></td></tr>
+          <tr><td><strong>Age:</strong></td><td>${u.age} years</td></tr>
+          <tr><td><strong>City:</strong></td><td>${u.city}</td></tr>
+          <tr><td><strong>Registered On:</strong></td><td>${u.registeredOn || 'N/A'}</td></tr>
+        </table>`;
+
+      const donations = (u.donationHistory || []).length;
+      const reqs = (JSON.parse(localStorage.getItem('bb_requests') || '[]')).filter(r => r.userId === u.id).length;
+      document.getElementById('profileStats').innerHTML = `
+        <div class="stat-card small"><h3>${donations}</h3><p>Donations Made</p></div>
+        <div class="stat-card small"><h3>${reqs}</h3><p>Requests Raised</p></div>
+        <div class="stat-card small"><h3>${u.blood}</h3><p>Blood Group</p></div>`;
+    }
+    loadProfile();
+
+    // ===== INVENTORY =====
+    function loadInventory() {
+      const inv = JSON.parse(localStorage.getItem('bb_inventory') || '{}');
+      const grid = document.getElementById('inventoryGrid');
+      grid.innerHTML = '';
+      Object.entries(inv).forEach(([type, units]) => {
+        const level = units > 8 ? 'high' : units > 4 ? 'medium' : 'low';
+        grid.innerHTML += `
+          <div class="inv-card ${level}">
+            <div class="inv-blood-type">${type}</div>
+            <div class="inv-units">${units}</div>
+            <div class="inv-label">units available</div>
+            <div class="inv-status">${level === 'high' ? '🟢 Sufficient' : level === 'medium' ? '🟡 Moderate' : '🔴 Critical'}</div>
+          </div>`;
+      });
+    }
+    loadInventory();
+
+    // ===== DONATE =====
+    document.getElementById('donateBlood').value = currentUser.blood;
+    document.getElementById('donateDate').valueAsDate = new Date();
+
+    document.getElementById('donateForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const date   = document.getElementById('donateDate').value;
+      const units  = parseInt(document.getElementById('donateUnits').value);
+      const center = document.getElementById('donateCenter').value.trim();
+      const msgBox = document.getElementById('donateMsg');
+
+      // Save donation history
+      const donation = { date, units, center, blood: currentUser.blood, status: 'Pending Approval' };
+      let users = JSON.parse(localStorage.getItem('bb_users') || '[]');
+      const idx = users.findIndex(u => u.id === currentUser.id);
+      if (!users[idx].donationHistory) users[idx].donationHistory = [];
+      users[idx].donationHistory.push(donation);
+      localStorage.setItem('bb_users', JSON.stringify(users));
+      currentUser = users[idx];
+      localStorage.setItem('bb_loggedIn', JSON.stringify(currentUser));
+
+      // Add pending donation to admin queue
+      let pending = JSON.parse(localStorage.getItem('bb_donations') || '[]');
+      pending.push({ ...donation, donorId: currentUser.id, donorName: currentUser.name, id: 'don_' + Date.now() });
+      localStorage.setItem('bb_donations', JSON.stringify(pending));
+
+      msgBox.style.display = 'block';
+      msgBox.className = 'msg-box success';
+      msgBox.textContent = '✅ Donation registered! Pending admin approval.';
+      this.reset();
+      document.getElementById('donateBlood').value = currentUser.blood;
+      document.getElementById('donateDate').valueAsDate = new Date();
+    });
+
+    // ===== REQUEST =====
+    document.getElementById('requestForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const patient  = document.getElementById('patientName').value.trim();
+      const blood    = document.getElementById('reqBlood').value;
+      const units    = parseInt(document.getElementById('reqUnits').value);
+      const hospital = document.getElementById('reqHospital').value.trim();
+      const reason   = document.getElementById('reqReason').value.trim();
+      const msgBox   = document.getElementById('reqMsg');
+
+      const inv = JSON.parse(localStorage.getItem('bb_inventory') || '{}');
+      if ((inv[blood] || 0) < units) {
+        msgBox.style.display = 'block';
+        msgBox.className = 'msg-box error';
+        msgBox.textContent = `❌ Insufficient stock! Only ${inv[blood] || 0} units of ${blood} available.`;
+        return;
+      }
+
+      let requests = JSON.parse(localStorage.getItem('bb_requests') || '[]');
+      requests.push({
+        id: 'req_' + Date.now(),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        patient, blood, units, hospital, reason,
+        status: 'Pending',
+        date: new Date().toLocaleDateString('en-IN')
+      });
+      localStorage.setItem('bb_requests', JSON.stringify(requests));
+
+      msgBox.style.display = 'block';
+      msgBox.className = 'msg-box success';
+      msgBox.textContent = '✅ Blood request submitted! Admin will process it shortly.';
+      this.reset();
+      loadMyRequests();
+    });
+
+    function loadMyRequests() {
+      const requests = JSON.parse(localStorage.getItem('bb_requests') || '[]').filter(r => r.userId === currentUser.id);
+      const container = document.getElementById('myRequests');
+      if (requests.length === 0) {
+        container.innerHTML = '<p class="no-data">No requests submitted yet.</p>';
+        return;
+      }
+      let html = `<table class="data-table"><thead><tr>
+        <th>Date</th><th>Patient</th><th>Blood</th><th>Units</th><th>Hospital</th><th>Status</th>
+      </tr></thead><tbody>`;
+      requests.forEach(r => {
+        const cls = r.status === 'Approved' ? 'status-approved' : r.status === 'Rejected' ? 'status-rejected' : 'status-pending';
+        html += `<tr>
+          <td>${r.date}</td><td>${r.patient}</td>
+          <td><span class="blood-tag">${r.blood}</span></td>
+          <td>${r.units}</td><td>${r.hospital}</td>
+          <td><span class="${cls}">${r.status}</span></td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+    loadMyRequests();
+
+    // ===== HISTORY =====
+    function loadHistory() {
+      const history = currentUser.donationHistory || [];
+      const container = document.getElementById('historyTable');
+      if (history.length === 0) {
+        container.innerHTML = '<p class="no-data">No donation history yet. Go to "Donate Blood" to register a donation.</p>';
+        return;
+      }
+      let html = `<table class="data-table"><thead><tr>
+        <th>Date</th><th>Blood Group</th><th>Units</th><th>Center</th><th>Status</th>
+      </tr></thead><tbody>`;
+      history.forEach(d => {
+        const cls = d.status === 'Approved' ? 'status-approved' : 'status-pending';
+        html += `<tr>
+          <td>${d.date}</td>
+          <td><span class="blood-tag">${d.blood}</span></td>
+          <td>${d.units}</td><td>${d.center}</td>
+          <td><span class="${cls}">${d.status}</span></td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // ===== SEARCH DONORS =====
+    function searchDonors() {
+      const bloodFilter = document.getElementById('searchBlood').value;
+      const cityFilter  = document.getElementById('searchCity').value.trim().toLowerCase();
+      const users = JSON.parse(localStorage.getItem('bb_users') || '[]').filter(u => u.role === 'user');
+      let results = users;
+      if (bloodFilter) results = results.filter(u => u.blood === bloodFilter);
+      if (cityFilter)  results = results.filter(u => u.city.toLowerCase().includes(cityFilter));
+
+      const container = document.getElementById('donorResults');
+      if (results.length === 0) {
+        container.innerHTML = '<p class="no-data">No donors found for the selected criteria.</p>';
+        return;
+      }
+      let html = `<table class="data-table"><thead><tr>
+        <th>Name</th><th>Blood Group</th><th>City</th><th>Phone</th>
+      </tr></thead><tbody>`;
+      results.forEach(u => {
+        html += `<tr>
+          <td>${u.name}</td>
+          <td><span class="blood-tag">${u.blood}</span></td>
+          <td>${u.city}</td><td>${u.phone}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // ===== LOGOUT =====
+    function logout() {
+      localStorage.removeItem('bb_loggedIn');
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>
